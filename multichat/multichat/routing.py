@@ -7,6 +7,7 @@ from channels import include
 channel_routing = [
     # Include sub-routing from an app.
     include("chat.routing.websocket_routing", path=r"^/chat/stream"),
+    include("chat.routing.drawing_websocket_routing", path=r"^/drawing/stream"),
 
     # Custom handler for message sending (see Room.send_message).
     # Can't go in the include above as it's not got a `path` attribute to match on.

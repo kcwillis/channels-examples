@@ -58,12 +58,15 @@
                         return false;
                     });
                     $("#chats").append(roomdiv);
-                    // Handle leaving
-                } else if (data.leave) {
+
+                }
+                // Handle leaving
+                else if (data.leave) {
                     console.log("Leaving room " + data.leave);
                     $("#room-" + data.leave).remove();
-                    // Handle getting a message
-                } else if (data.message || data.msg_type != 0) {
+                }
+                // Handle getting a message
+                else if (data.message || data.msg_type != 0) {
                     var msgdiv = $("#room-" + data.room + " .messages");
                     var ok_msg = "";
                     // msg types are defined in chat/settings.py
@@ -110,7 +113,8 @@
                     msgdiv.append(ok_msg);
 
                     msgdiv.scrollTop(msgdiv.prop("scrollHeight"));
-                } else {
+                }
+                else {
                     console.log("Cannot handle message!");
                 }
             });

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import Room
+from .models import Room, DrawingBoard
 
 
 @login_required
@@ -19,4 +19,8 @@ def index(request):
 
 @login_required
 def drawing(request):
-    return render(request, "drawing.html")
+    drawingboards = DrawingBoard.objects.order_by("title")
+
+    return render(request, "drawing.html", {
+        "drawingboards": drawingboards,
+    })

@@ -17,7 +17,7 @@ MESSAGE_TYPES_CHOICES = getattr(settings, 'MESSAGE_TYPES_CHOICES', (
     (MSG_TYPE_MUTED, 'MUTED'),
     (MSG_TYPE_ENTER, 'ENTER'),
     (MSG_TYPE_LEAVE, 'LEAVE'),
-    (MSG_TYPE_LEAVE, 'LEAVE'))
+    (MSG_TYPE_DRAWING, 'DRAWING'))
                                 )
 
 MESSAGE_TYPES_LIST = getattr(settings, 'MESSAGE_TYPES_LIST',

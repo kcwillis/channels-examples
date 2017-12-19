@@ -3,7 +3,7 @@ from channels import Channel
 from channels.auth import channel_session_user_from_http, channel_session_user
 
 from .settings import MSG_TYPE_LEAVE, MSG_TYPE_ENTER, NOTIFY_USERS_ON_ENTER_OR_LEAVE_ROOMS
-from .models import Room
+from .models import Room, DrawingBoard
 from .utils import get_room_or_error, catch_client_error
 from .exceptions import ClientError
 
@@ -46,6 +46,24 @@ def ws_disconnect(message):
             room.websocket_group.discard(message.reply_channel)
         except Room.DoesNotExist:
             pass
+
+
+@channel_session_user_from_http
+def drawing_ws_connect(message):
+    message.reply_channel.send({'accept': True})
+    # Initialise their session
+    message.channel_session['drawingboards'] = []
+
+
+def drawing_ws_receive(message):
+    payload = json.loads(message['text'])
+    payload['reply_channel'] = message.content['reply_channel']
+    Channel("chat.receive").send(payload)
+
+
+@channel_session_user
+def drawing_ws_disconnect(message):
+    pass
 
 
 ### Chat channel handling ###
@@ -112,3 +130,9 @@ def chat_send(message):
     room = get_room_or_error(message["room"], message.user)
     # Send the message along
     room.send_message(message["message"], message.user)
+
+
+@channel_session_user
+@catch_client_error
+def drawing_send(message):
+    pass
