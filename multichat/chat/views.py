@@ -16,3 +16,7 @@ def index(request):
     return render(request, "index.html", {
         "rooms": rooms,
     })
+
+@login_required
+def drawing(request):
+    return render(request, "drawing.html")
