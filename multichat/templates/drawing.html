@@ -31,30 +31,57 @@
 
     <script language="JavaScript1.2">
         $(function () {
+            console.log("DEBUG 1");
+            console.log("drawing $function()");
             // Correctly decide between ws:// and wss://
-            {#var ws_path = "/drawing/stream/";#}
-            {#console.log("Connecting to " + ws_path);#}
-            {##}
-            {#var webSocketBridge = new channels.WebSocketBridge();#}
-            {#webSocketBridge.connect(ws_path);#}
-            {#// Handle incoming messages#}
-            {#webSocketBridge.listen(function(data) {}#}
-            var IE = document.all?true:false;
-            var MOUSE_HELD =  false;
+            var ws_path = "/drawing/stream/";
+            console.log("Connecting to " + ws_path);
+
+            var webSocketBridge = new channels.WebSocketBridge();
+            console.log("DEBUG 2");
+            webSocketBridge.connect(ws_path);
+            console.log("DEBUG 3");
+
+            // join
+            function wsconnect() {
+                webSocketBridge.send({
+                    "command": "draw_join",
+                    "room": 1
+                });
+                CONNECTED = true;
+            }
+
+            // Handle incoming messages
+            webSocketBridge.listen(function(data) {
+                console.log("DEBUG 6");
+                console.log("Got websocket message", data);
+                var draw_obj = JSON.parse(data.message);
+                {#prev_x = draw_obj.prev_x#}
+                {#prev_y = draw_obj.prev_y#}
+                {#curr_x = draw_obj.curr_x#}
+                {#curr_y = draw_obj.curr_y#}
+                draw("black", draw_obj.prev_x, draw_obj.prev_y, draw_obj.curr_x, draw_obj.curr_y);
+            });
+            console.log("DEBUG 4");
+            var IE = !!document.all;
+            var MOUSE_HELD = false;
             var canvas = document.getElementById("DrawingCanvas");
             var ctx = canvas.getContext("2d");
-            var prevX =  0;
-            var prevY =  0;
+            var prevX = 0;
+            var prevY = 0;
             var currX = 0;
             var currY = 0;
             var pageX = 0;
             var pageY = 0;
+            var CONNECTED = false;
 
             if (!IE) document.captureEvents(Event.MOUSEMOVE)
 
             document.onmousemove = getMouseXY;
-            document.onmousedown = set_mouse_down;
-            document.onmouseup = set_mouse_up;
+            {#document.onmousedown = set_mouse_down;#}
+            {#document.onmouseup = set_mouse_up;#}
+            canvas.onmousedown = set_mouse_down;
+            canvas.onmouseup = set_mouse_up;
 
             function getMouseXY(e) {
                 if (MOUSE_HELD) {
@@ -67,8 +94,12 @@
                         pageY = e.pageY;
 
                     }
-                    if (pageX < 0){pageX = 0;}
-                    if (pageY < 0){pageY = 0;}
+                    if (pageX < 0) {
+                        pageX = 0;
+                    }
+                    if (pageY < 0) {
+                        pageY = 0;
+                    }
                     prevX = currX;
                     prevY = currY;
                     currX = pageX - canvas.offsetLeft;
@@ -79,30 +110,57 @@
                     document.Show.CanvasMouseY.value = currY;
 
                     // Send event to channel
-                    draw()
+                    {#draw()#}
+                    send_to_channel(prevX, prevY, currX, currY);
                 }
                 return true;
             }
-            function draw(stokestyle) {
+
+            function send_to_channel(prev_x, prev_y, curr_x, curr_y) {
+                console.log("DEBUG 5");
+                webSocketBridge.send({
+                        "command": "draw",
+                        "drawingboard_id":$(this).attr("data-room-id"),
+                        "prev_x": prev_x.toString(),
+                        "prev_y": prev_y.toString(),
+                        "curr_x": curr_x.toString(),
+                        "curr_y": curr_y.toString()
+                });
+            }
+
+
+
+            function draw(stokestyle, prev_x, prev_y, curr_x, curr_y) {
                 ctx.beginPath();
-                ctx.moveTo(prevX, prevY);
-                ctx.lineTo(currX, currY);
-                ctx.strokeStyle = (typeof stokestyle !== 'undefined') ?  stokestyle : "black";
+                ctx.moveTo(prev_x, prev_y);
+                ctx.lineTo(curr_x, curr_y);
+                ctx.strokeStyle = (typeof stokestyle !== 'undefined') ? stokestyle : "black";
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 ctx.closePath();
+                {#console.log("draw()")#}
             }
+
             function set_mouse_down(e) {
+                if(!CONNECTED){
+                    wsconnect()
+                };
                 prevX = e.pageX - canvas.offsetLeft;
                 prevY = e.pageY - canvas.offsetTop;
                 currX = prevX
                 currY = prevY
-                draw("red")
+                {#draw("red")#}
+                send_to_channel(prevX, prevY, currX, currY);
                 MOUSE_HELD = true;
             }
+
             function set_mouse_up(e) {
                 MOUSE_HELD = false;
             }
+
+
+
+
         });
     </script>
 {% endblock %}

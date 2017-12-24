@@ -20,7 +20,7 @@ def index(request):
 @login_required
 def drawing(request):
     drawingboards = DrawingBoard.objects.order_by("title")
-
+    print(' views.py/drawing()')
     return render(request, "drawing.html", {
         "drawingboards": drawingboards,
     })

@@ -1,7 +1,7 @@
 from functools import wraps
 
 from .exceptions import ClientError
-from .models import Room
+from .models import Room, DrawingBoard
 
 
 def catch_client_error(func):
@@ -35,3 +35,21 @@ def get_room_or_error(room_id, user):
     if room.staff_only and not user.is_staff:
         raise ClientError("ROOM_ACCESS_DENIED")
     return room
+
+
+def get_drawingboard_or_error(drawingboard_id, user):
+    """
+    Tries to fetch a room for the user, checking permissions along the way.
+    """
+    # Check if the user is logged in
+    if not user.is_authenticated():
+        raise ClientError("USER_HAS_TO_LOGIN")
+    # Find the room they requested (by ID)
+    try:
+        drawingboard = DrawingBoard.objects.get(pk=drawingboard_id)
+    except Room.DoesNotExist:
+        raise ClientError("ROOM_INVALID")
+    # Check permissions
+    if drawingboard.staff_only and not user.is_staff:
+        raise ClientError("ROOM_ACCESS_DENIED")
+    return drawingboard

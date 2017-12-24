@@ -22,23 +22,33 @@
 {% block extra_body %}
     <script>
         $(function () {
+            console.log("DEBUG 1");
             // Correctly decide between ws:// and wss://
             var ws_path = "/chat/stream/";
             console.log("Connecting to " + ws_path);
 
+            console.log("DEBUG 2");
             var webSocketBridge = new channels.WebSocketBridge();
             webSocketBridge.connect(ws_path);
+            console.log("DEBUG 3");
             // Handle incoming messages
             webSocketBridge.listen(function(data) {
                 // Decode the JSON
+                console.log("DEBUG 4");
                 console.log("Got websocket message", data);
+                {#console.log("data")#}
+                {#console.log(data)#}
+                {#console.log("data END")#}
                 // Handle errors
                 if (data.error) {
+                    console.log("DEBUG 5");
                     alert(data.error);
                     return;
                 }
                 // Handle joining
+                console.log("DEBUG 6");
                 if (data.join) {
+                    console.log("DEBUG 7");
                     console.log("Joining room " + data.join);
                     var roomdiv = $(
                             "<div class='room' id='room-" + data.join + "'>" +
@@ -47,26 +57,35 @@
                             "<form><input><button>Send</button></form>" +
                             "</div>"
                     );
+                    console.log("DEBUG 8");
                     // Hook up send button to send a message
                     roomdiv.find("form").on("submit", function () {
+                        console.log("DEBUG 9");
                         webSocketBridge.send({
                             "command": "send",
                             "room": data.join,
                             "message": roomdiv.find("input").val()
                         });
                         roomdiv.find("input").val("");
+                        console.log("DEBUG 10");
                         return false;
                     });
+                    console.log("DEBUG 11");
                     $("#chats").append(roomdiv);
+                    console.log("DEBUG 12")
 
                 }
                 // Handle leaving
+
                 else if (data.leave) {
+                    console.log("DEBUG 13");
+                    console.log("DEBUG 14");
                     console.log("Leaving room " + data.leave);
                     $("#room-" + data.leave).remove();
                 }
                 // Handle getting a message
                 else if (data.message || data.msg_type != 0) {
+                    console.log("DEBUG 15");
                     var msgdiv = $("#room-" + data.room + " .messages");
                     var ok_msg = "";
                     // msg types are defined in chat/settings.py
@@ -118,14 +137,16 @@
                     console.log("Cannot handle message!");
                 }
             });
-
+            console.log("DEBUG 16");
             // Says if we joined a room or not by if there's a div for it
             inRoom = function (roomId) {
+                console.log("DEBUG 17");
                 return $("#room-" + roomId).length > 0;
             };
-
+            console.log("DEBUG 18");
             // Room join/leave
             $("li.room-link").click(function () {
+                console.log("DEBUG 19");
                 roomId = $(this).attr("data-room-id");
                 if (inRoom(roomId)) {
                     // Leave room
@@ -136,6 +157,8 @@
                     });
                 } else {
                     // Join room
+                    console.log("DEBUG 23");
+                    console.log("DEBUG 24, roomId: " + roomId);
                     $(this).addClass("joined");
                     webSocketBridge.send({
                         "command": "join",
@@ -143,14 +166,16 @@
                     });
                 }
             });
-
+            console.log("DEBUG 20");
             // Helpful debugging
             webSocketBridge.socket.onopen = function () {
                 console.log("Connected to chat socket");
             };
+            console.log("DEBUG 21");
             webSocketBridge.socket.onclose = function () {
                 console.log("Disconnected from chat socket");
-            }
+            };
+            console.log("DEBUG 22");
         });
     </script>
 {% endblock %}

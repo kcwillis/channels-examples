@@ -1,6 +1,7 @@
 from channels import route
 from .consumers import ws_connect, ws_receive, ws_disconnect, chat_join, chat_leave, chat_send, \
-                        drawing_ws_connect, drawing_ws_receive, drawing_ws_disconnect, drawing_send
+                        drawing_ws_connect, drawing_ws_receive, drawing_ws_disconnect, drawing_send, \
+                        drawing_draw, drawing_join
 
 
 # There's no path matching on these routes; we just rely on the matching
@@ -36,5 +37,7 @@ custom_routing = [
     route("chat.receive", chat_join, command="^join$"),
     route("chat.receive", chat_leave, command="^leave$"),
     route("chat.receive", chat_send, command="^send$"),
-    route("chat.receive", drawing_send, command="^send$")
+    # route("chat.receive", drawing_send, command="^send$"),
+    route("chat.receive", drawing_draw, command="^draw$"),
+    route("chat.receive", drawing_join, command="^draw_join$")
 ]

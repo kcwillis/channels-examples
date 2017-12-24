@@ -60,12 +60,15 @@ class DrawingBoard(models.Model):
         Returns the Channels Group that sockets should subscribe to to get sent
         messages as they are generated.
         """
-        return Group("room-%s" % self.id)
+        print('chat/models.py/Drawingboard.websocket_group()')
+        print("drawingboard-%s" % self.id)
+        return Group("drawingboard-%s" % self.id)
 
     def send_message(self, message, user, msg_type=MSG_TYPE_DRAWING):
         """
         Called to send a message to the room on behalf of a user.
         """
+        print("DrawingBoard.send_message()")
         final_msg = {'drawingboard': str(self.id), 'message': message, 'username': user.username, 'msg_type': msg_type}
 
         # Send out the message to everyone in the room
