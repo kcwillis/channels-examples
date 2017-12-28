@@ -160,7 +160,7 @@ def drawing_join(message):
     # Note that, because of channel_session_user, we have a message.user
     # object that works just like request.user would. Security!
 
-    drawingboard = get_drawingboard_or_error(1, message.user)
+    drawingboard = get_drawingboard_or_error(message['drawingboard'], message.user)
 
     # Send a "enter message" to the room if available
     if NOTIFY_USERS_ON_ENTER_OR_LEAVE_ROOMS:
@@ -183,6 +183,26 @@ def drawing_join(message):
 
 @channel_session_user
 @catch_client_error
+def drawing_leave(message):
+    print('chat/consumers.py/drawing_leave()')
+    # Reverse of join - remove them from everything.
+    drawingboard = get_drawingboard_or_error(message['drawingboard'], message.user)
+
+    # Send a "leave message" to the room if available
+    if NOTIFY_USERS_ON_ENTER_OR_LEAVE_ROOMS:
+        drawingboard.send_message(None, message.user, MSG_TYPE_LEAVE)
+
+    drawingboard.websocket_group.add(message.reply_channel)
+    message.channel_session['rooms'] = list(set(message.channel_session['drawingboards']).difference([drawingboard.id]))
+    # Send a message back that will prompt them to close the room
+    message.reply_channel.send({
+        "text": json.dumps({
+            "leave": str(drawingboard.id),
+        }),
+    })
+
+@channel_session_user
+@catch_client_error
 def drawing_send(message):
     print('chat/consumers.py/drawing_send()')
     pass
@@ -193,9 +213,10 @@ def drawing_send(message):
 def drawing_draw(message):
     print('chat/consumers.py/drawing_draw()')
     # drawingboard = get_drawingboard_or_error(message["drawingboard"], message.user)
-    drawingboard = get_drawingboard_or_error(1, message.user)
+    drawingboard = get_drawingboard_or_error(message['drawingboard'], message.user)
 
-    draw_message = {'prev_x':message['prev_x'],
+    draw_message = {'draw':str(drawingboard.id),
+                    'prev_x':message['prev_x'],
                     'prev_y':message['prev_y'],
                     'curr_x':message['curr_x'],
                     'curr_y':message['curr_y']}

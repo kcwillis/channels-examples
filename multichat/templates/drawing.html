@@ -4,36 +4,50 @@
 {% block header_text %}Drawing Example{% endblock %}
 
 {% block content %}
-
-    <ul class="drawingboards">
-        {% for drawingboard in drawingboards %}
-            <li class="room-link" data-room-id="{{ drawingboard.id }}">{{ drawingboard }}</li>
-        {% empty %}
-            <p class="empty">No drawing boards defined. Maybe make some in the <a href="{% url 'admin:index' %}">admin</a>?</p>
-        {% endfor %}
-    </ul>
-
-    <div id="chats">
-    </div>
-
-{% endblock %}
-
-{% block extra_body %}
+    <div id="mousexydisplay">
     <form name="Show">
         X <input type="text" name="MouseX" value="0" size="4"><br>
         Y <input type="text" name="MouseY" value="0" size="4"><br>
         Z <input type="text" name="CanvasMouseX" value="0" size="4"><br>
         B <input type="text" name="CanvasMouseY" value="0" size="4"><br>
     </form>
-    <canvas id="DrawingCanvas" width="1000" height="500"
-            style="border:1px solid #c3c3c3;">
-    </canvas>
+    </div>
+    <ul class="drawingboards">
+        {% for drawingboard in drawingboards %}
+            <li class="drawingboard-link" data-drawingboard-id="{{ drawingboard.id }}">{{ drawingboard }}</li>
+        {% empty %}
+            <p class="empty">No drawing boards defined. Maybe make some in the <a href="{% url 'admin:index' %}">admin</a>?</p>
+        {% endfor %}
+    </ul>
+
+    <div id="drawings">
+    </div>
+
+{% endblock %}
+
+{% block extra_body %}
+
+{#    <canvas id="DrawingCanvas" width="1000" height="500"#}
+{#            style="border:1px solid #c3c3c3;">#}
+{#    </canvas>#}
 
     <script language="JavaScript1.2">
         $(function () {
             console.log("DEBUG 1");
             console.log("drawing $function()");
             // Correctly decide between ws:// and wss://
+            var IE = !!document.all;
+            var MOUSE_HELD = false;
+            {#var canvas = document.getElementById("DrawingCanvas");#}
+            {#var ctx = canvas.getContext("2d");#}
+            var prevX = 0;
+            var prevY = 0;
+            var currX = 0;
+            var currY = 0;
+            var pageX = 0;
+            var pageY = 0;
+            var CONNECTED = false;
+
             var ws_path = "/drawing/stream/";
             console.log("Connecting to " + ws_path);
 
@@ -44,6 +58,7 @@
 
             // join
             function wsconnect() {
+                console.log("drawing.html/wsconnect()");
                 webSocketBridge.send({
                     "command": "draw_join",
                     "room": 1
@@ -55,35 +70,56 @@
             webSocketBridge.listen(function(data) {
                 console.log("DEBUG 6");
                 console.log("Got websocket message", data);
-                var draw_obj = JSON.parse(data.message);
-                {#prev_x = draw_obj.prev_x#}
-                {#prev_y = draw_obj.prev_y#}
-                {#curr_x = draw_obj.curr_x#}
-                {#curr_y = draw_obj.curr_y#}
-                draw("black", draw_obj.prev_x, draw_obj.prev_y, draw_obj.curr_x, draw_obj.curr_y);
+
+                if (data.draw){
+                    var draw_obj = JSON.parse(data.message);
+                    draw("black", draw_obj.prev_x, draw_obj.prev_y, draw_obj.curr_x, draw_obj.curr_y);
+                }
+                else if (data.join){
+                    //handle joining
+                    console.log("data.join "+ data.join);
+                    var drawingboarddiv = $(
+                            "<div class='drawingboard' id='drawingboard-" + data.join + "'>" +
+                            "<canvas id='DrawingCanvas-" + data.join + "' width='780' height='500'" +
+                            "style='border:1px solid #c3c3c3;'></canvas>"+
+                            "</div>"
+                    );
+
+                    drawingboarddiv.find("canvas").on("mousedown", function(e){
+                        console.log('canvas.mousedown()');
+                        console.log($(this).find("canvas"));
+                        set_mouse_down(e, $(this).find("canvas").context);
+                    });
+                    drawingboarddiv.find("canvas").on("mouseup", function(e){
+                        console.log('canvas.mouseup()');
+                        set_mouse_up(e);
+                    });
+                    drawingboarddiv.find("canvas").on("mousemove", function(e){
+                        console.log('canvas.mousemove()');
+                        getMouseXY(e, $(this).find("canvas").context)
+                    });
+                    $("#drawings").append(drawingboarddiv);
+                }
+                else if (data.leave){
+                    //handle leaving
+                    console.log("data.leave drawing " + data.leave);
+                    $("#drawingboard-" + data.leave).remove();
+                }
+                {#console.log("DEBUG 6");#}
+                {#console.log("Got websocket message", data);#}
+                {#var draw_obj = JSON.parse(data.message);#}
+                {#draw("black", draw_obj.prev_x, draw_obj.prev_y, draw_obj.curr_x, draw_obj.curr_y);#}
             });
             console.log("DEBUG 4");
-            var IE = !!document.all;
-            var MOUSE_HELD = false;
-            var canvas = document.getElementById("DrawingCanvas");
-            var ctx = canvas.getContext("2d");
-            var prevX = 0;
-            var prevY = 0;
-            var currX = 0;
-            var currY = 0;
-            var pageX = 0;
-            var pageY = 0;
-            var CONNECTED = false;
+
 
             if (!IE) document.captureEvents(Event.MOUSEMOVE)
 
-            document.onmousemove = getMouseXY;
-            {#document.onmousedown = set_mouse_down;#}
-            {#document.onmouseup = set_mouse_up;#}
-            canvas.onmousedown = set_mouse_down;
-            canvas.onmouseup = set_mouse_up;
+            {#document.onmousemove = getMouseXY;#}
+            {#canvas.onmousedown = set_mouse_down;#}
+            {#canvas.onmouseup = set_mouse_up;#}
 
-            function getMouseXY(e) {
+            function getMouseXY(e, ctx) {
                 if (MOUSE_HELD) {
                     if (IE) { // grab the x-y pos.s if browser is IE
                         pageX = event.clientX + document.body.scrollLeft;
@@ -102,8 +138,10 @@
                     }
                     prevX = currX;
                     prevY = currY;
-                    currX = pageX - canvas.offsetLeft;
-                    currY = pageY - canvas.offsetTop;
+                    {#console.log('getMouseXY()');#}
+                    {#console.log(canvas);#}
+                    currX = pageX - ctx.offsetLeft;
+                    currY = pageY - ctx.offsetTop;
                     document.Show.MouseX.value = pageX;
                     document.Show.MouseY.value = pageY;
                     document.Show.CanvasMouseX.value = currX;
@@ -111,16 +149,17 @@
 
                     // Send event to channel
                     {#draw()#}
-                    send_to_channel(prevX, prevY, currX, currY);
+                    send_to_channel(ctx, prevX, prevY, currX, currY);
                 }
                 return true;
             }
 
-            function send_to_channel(prev_x, prev_y, curr_x, curr_y) {
+            function send_to_channel(ctx, prev_x, prev_y, curr_x, curr_y) {
                 console.log("DEBUG 5");
+                console.log('drawingboard_id: ' + ctx.id );
                 webSocketBridge.send({
                         "command": "draw",
-                        "drawingboard_id":$(this).attr("data-room-id"),
+                        "drawingboard":ctx.id,
                         "prev_x": prev_x.toString(),
                         "prev_y": prev_y.toString(),
                         "curr_x": curr_x.toString(),
@@ -128,9 +167,7 @@
                 });
             }
 
-
-
-            function draw(stokestyle, prev_x, prev_y, curr_x, curr_y) {
+            function draw(ctx, stokestyle, prev_x, prev_y, curr_x, curr_y) {
                 ctx.beginPath();
                 ctx.moveTo(prev_x, prev_y);
                 ctx.lineTo(curr_x, curr_y);
@@ -138,19 +175,20 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 ctx.closePath();
-                {#console.log("draw()")#}
+                console.log("draw()")
             }
 
-            function set_mouse_down(e) {
-                if(!CONNECTED){
-                    wsconnect()
-                };
-                prevX = e.pageX - canvas.offsetLeft;
-                prevY = e.pageY - canvas.offsetTop;
+            function set_mouse_down(e, ctx) {
+                {#if(!CONNECTED){#}
+                {#    wsconnect()#}
+                {#{;#}
+                console.log(ctx.id);
+                prevX = e.pageX - ctx.offsetLeft;
+                prevY = e.pageY - ctx.offsetTop;
                 currX = prevX
                 currY = prevY
                 {#draw("red")#}
-                send_to_channel(prevX, prevY, currX, currY);
+                send_to_channel(ctx, prevX, prevY, currX, currY);
                 MOUSE_HELD = true;
             }
 
@@ -158,8 +196,33 @@
                 MOUSE_HELD = false;
             }
 
+            inDrawingboard = function (drawingboardId) {
+                console.log("DEBUG 17");
+                console.log($("#drawingboard-" + drawingboardId).length > 0)
+                return $("#drawingboard-" + drawingboardId).length > 0;
+            };
 
-
+            $("li.drawingboard-link").click(function () {
+                console.log("DEBUG 19");
+                drawingboardId = $(this).attr("data-drawingboard-id");
+                if (inDrawingboard(drawingboardId)) {
+                    // Leave drawingboard
+                    $(this).removeClass("joined");
+                    webSocketBridge.send({
+                        "command": "draw_leave",
+                        "drawingboard": drawingboardId
+                    });
+                } else {
+                    // Join drawingboard
+                    console.log("DEBUG 23");
+                    console.log("DEBUG 24, drawingboardId: " + drawingboardId);
+                    $(this).addClass("joined");
+                    webSocketBridge.send({
+                        "command": "draw_join",
+                        "drawingboard": drawingboardId
+                    });
+                }
+            });
 
         });
     </script>

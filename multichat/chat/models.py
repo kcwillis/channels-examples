@@ -41,6 +41,7 @@ class Room(models.Model):
         )
 
 
+@python_2_unicode_compatible
 class DrawingBoard(models.Model):
     """
     A shared drawing board for users to draw on.

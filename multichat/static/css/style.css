@@ -138,3 +138,65 @@ p {
         font-weight: bold;
         font-style: italic;
     }
+
+#mousexydisplay {
+}
+    #mousexydisplay form{
+        margin: 20px 100px 100px 10px;
+        padding: 20px;
+    }
+
+.drawingboards li {
+    padding: 5px 7px;
+    background: #def;
+    display: inline;
+    margin: 5px 2px;
+    border: 1px solid #bcd;
+    border-radius: 2px;
+    cursor: pointer;
+}
+    .drawingboards li.joined {
+        background: #5898D9;
+        border: 1px solid #35485C;
+    }
+#drawings {
+}
+    #drawings .drawingboard {
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin: 30px 0 0 0;
+    }
+    #drawings h2 {
+        color: #333;
+        margin: 2px 0 5px 0;
+        font-weight: bold;
+    }
+    #drawings .messages {
+        height: 200px;
+        overflow: auto;
+        background: #eee;
+        margin: 2px 0 5px 0;
+    }
+    #drawings .username {
+        display: inline-block;
+        color: #C07A36;
+        width: 100px;
+        font-weight: bold;
+    }
+    #drawings .contextual-message{
+        text-align: center;
+        margin: 5px 5px 5px 5px;
+    }
+    #drawings .text-muted {
+        opacity: .6;
+        font-style: italic;
+    }
+    #drawings .text-danger {
+        color: #a94442;
+        font-weight: bold;
+    }
+    #drawings .text-warning {
+        color: #DCAD5C;
+        font-weight: bold;
+        font-style: italic;
+    }
