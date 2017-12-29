@@ -70,18 +70,24 @@
             webSocketBridge.listen(function(data) {
                 console.log("DEBUG 6");
                 console.log("Got websocket message", data);
-
-                if (data.draw){
-                    var draw_obj = JSON.parse(data.message);
-                    draw("black", draw_obj.prev_x, draw_obj.prev_y, draw_obj.curr_x, draw_obj.curr_y);
+                if (data.message) {
+                    var message = JSON.parse(data.message);
+                    if (message.draw) {
+                        {#var draw_obj = JSON.parse(data.message);#}
+                        draw(document.getElementById("DrawingCanvas-"+data.drawingboard).getContext("2d"),
+                            "black", message.prev_x, message.prev_y, message.curr_x, message.curr_y);
+                    }
                 }
                 else if (data.join){
                     //handle joining
                     console.log("data.join "+ data.join);
                     var drawingboarddiv = $(
                             "<div class='drawingboard' id='drawingboard-" + data.join + "'>" +
-                            "<canvas id='DrawingCanvas-" + data.join + "' width='780' height='500'" +
-                            "style='border:1px solid #c3c3c3;'></canvas>"+
+                                "<canvas id='DrawingCanvas-" + data.join + "'" +
+                                    " drawingboardId='" + data.join + "'" +
+                                    " width='780' height='500'" +
+                                    " style='border:1px solid #c3c3c3;'>"+
+                                "</canvas>"+
                             "</div>"
                     );
 
@@ -156,10 +162,10 @@
 
             function send_to_channel(ctx, prev_x, prev_y, curr_x, curr_y) {
                 console.log("DEBUG 5");
-                console.log('drawingboard_id: ' + ctx.id );
+                console.log('drawingboard_id: ' + ctx.getAttribute("drawingboardid") );
                 webSocketBridge.send({
                         "command": "draw",
-                        "drawingboard":ctx.id,
+                        "drawingboard": ctx.getAttribute("drawingboardid"),
                         "prev_x": prev_x.toString(),
                         "prev_y": prev_y.toString(),
                         "curr_x": curr_x.toString(),

@@ -223,6 +223,7 @@ def drawing_draw(message):
 
     # print(json.dumps(draw_message))
     drawingboard.send_message(json.dumps(draw_message), message.user)
+    # drawingboard.send_message({'text':json.dumps(draw_message), message.user)
 
     # print('message.keys(): ')
     # for key in message.keys():
