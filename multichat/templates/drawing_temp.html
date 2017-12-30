@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Drawing Example{% endblock %}
+{% block header_text %}Drawing Example{% endblock %}
+
+{% block content %}
+
+    <ul class="drawingboards">
+        {% for drawingboard in drawingboards %}
+            <li class="room-link" data-room-id="{{ drawingboard.id }}">{{ drawingboard }}</li>
+        {% empty %}
+            <p class="empty">No drawing boards defined. Maybe make some in the <a href="{% url 'admin:index' %}">admin</a>?</p>
+        {% endfor %}
+    </ul>
+
+    <div id="chats">
+    </div>
+
+{% endblock %}
+
+{% block extra_body %}
+    <form name="Show">
+        X <input type="text" name="MouseX" value="0" size="4"><br>
+        Y <input type="text" name="MouseY" value="0" size="4"><br>
+        Z <input type="text" name="CanvasMouseX" value="0" size="4"><br>
+        B <input type="text" name="CanvasMouseY" value="0" size="4"><br>
+    </form>
+    <canvas id="DrawingCanvas" width="1000" height="500"
+            style="border:1px solid #c3c3c3;">
+    </canvas>
+
+    <script language="JavaScript1.2">
+        $(function () {
+            // Correctly decide between ws:// and wss://
+            var ws_path = "/drawing/stream/";
+            console.log("Connecting to " + ws_path);
+
+            var webSocketBridge = new channels.WebSocketBridge();
+            webSocketBridge.connect(ws_path);
+            // Handle incoming messages
+            webSocketBridge.listen(function(data) {
+
+            }
+            var IE = document.all?true:false;
+            var MOUSE_HELD =  false;
+            var canvas = document.getElementById("DrawingCanvas");
+            var ctx = canvas.getContext("2d");
+            var prevX =  0;
+            var prevY =  0;
+            var currX = 0;
+            var currY = 0;
+            var pageX = 0;
+            var pageY = 0;
+
+            if (!IE) document.captureEvents(Event.MOUSEMOVE)
+
+            document.onmousemove = getMouseXY;
+            document.onmousedown = set_mouse_down;
+            document.onmouseup = set_mouse_up;
+
+            function getMouseXY(e) {
+                if (MOUSE_HELD) {
+                    if (IE) { // grab the x-y pos.s if browser is IE
+                        pageX = event.clientX + document.body.scrollLeft;
+                        pageY = event.clientY + document.body.scrollTop;
+                    }
+                    else {  // grab the x-y pos.s if browser is NS
+                        pageX = e.pageX;
+                        pageY = e.pageY;
+
+                    }
+                    if (pageX < 0){pageX = 0;}
+                    if (pageY < 0){pageY = 0;}
+                    prevX = currX;
+                    prevY = currY;
+                    currX = pageX - canvas.offsetLeft;
+                    currY = pageY - canvas.offsetTop;
+                    document.Show.MouseX.value = pageX;
+                    document.Show.MouseY.value = pageY;
+                    document.Show.CanvasMouseX.value = currX;
+                    document.Show.CanvasMouseY.value = currY;
+
+                    // Send event to channel
+                    draw()
+                }
+                return true;
+            }
+            function draw(stokestyle) {
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(currX, currY);
+                ctx.strokeStyle = (typeof stokestyle !== 'undefined') ?  stokestyle : "black";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+            }
+            function set_mouse_down(e) {
+                prevX = e.pageX - canvas.offsetLeft;
+                prevY = e.pageY - canvas.offsetTop;
+                currX = prevX
+                currY = prevY
+                draw("red")
+                MOUSE_HELD = true;
+            }
+            function set_mouse_up(e) {
+                MOUSE_HELD = false;
+            }
+        });
+    </script>
+{% endblock %}
